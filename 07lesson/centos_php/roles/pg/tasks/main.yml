@@ -1,0 +1,103 @@
+---
+#- name: Selinux off
+#  copy:
+#    src: config
+#    dest: /etc/selinux/config
+#  tags:
+#    - pgsql
+#    - selinux
+#
+#- name: reboot
+#  ansible.builtin.reboot:
+#  tags: pgsql
+#
+#- name: Selinux off
+#  shell: "setsebool -P httpd_enable_homedirs 1; setenforce 0"
+#  tags:
+#    - pgsql
+#    - selinux
+
+- name: connect to .rpm postgresql
+  yum:
+    name:
+      - https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+    state: present
+    validate_certs: no
+  tags:
+    - package
+    - pgsql
+
+- name: install postgresql & unzip
+  yum:
+    name:
+      - postgresql14-server
+      - unzip
+    state: present
+  tags:
+    - package
+    - pgsql
+
+- name: "Initialize PostgreSQL"
+  shell: "/usr/pgsql-14/bin/postgresql-14-setup initdb"
+  tags:
+    - initdb
+    - conf_pgsql
+    - pgsql
+  ignore_errors: True
+#  when: not postgres_data.stat.exists
+
+- name: replace config
+  copy:
+    src: postgresql.conf
+    dest: /var/lib/pgsql/14/data/postgresql.conf
+  tags:
+    - pgsql
+    - conf_pgsql
+  become: yes
+  become_user: root
+
+
+- name: replace config
+  copy:
+    src: pg_hba.conf
+    dest: /var/lib/pgsql/14/data/pg_hba.conf
+  become: yes
+  become_user: root
+  tags:
+    - pgsql
+    - conf_pgsql
+
+- name: start pg
+  systemd:
+    name: postgresql-14
+    state: started
+  tags: pgsql
+
+- name: download small db
+  ansible.builtin.copy:
+    src: demo-small-en-20170815.sql
+    dest: /var/lib/pgsql
+  become_user: postgres
+  tags:
+    - smalldb
+    - pgsql
+
+- name: sql script
+  shell: psql -f "/var/lib/pgsql/demo-small-en-20170815.sql"
+  become_user: postgres
+  tags:
+    - pgsql
+
+- name: change pswd postgres
+  shell: sudo -u postgres psql -c "alter user postgres with encrypted password 'postgres';"
+  become: yes
+  become_user: root
+  tags: pgsql
+#
+#- name:
+#  postgresql_owner:
+#    db: demo
+#    new_owner: aboba
+#    obj_name: demo
+#    obj_type: table
+#  tags: db

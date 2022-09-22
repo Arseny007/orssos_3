@@ -1,0 +1,13 @@
+- name: Installing and setting Nginx and php
+  hosts: web
+  become: true
+  strategy: linear
+  roles:
+    - web
+
+- name: Installing and setting HAProxy
+  hosts: pg
+  become: true
+  strategy: linear
+  roles:
+    - pg

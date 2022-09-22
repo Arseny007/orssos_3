@@ -1,0 +1,13 @@
+---
+- name: restart pg
+  systemd:
+    state: restarted
+    name: postgresql-14
+    enabled: yes
+
+
+- name: start pg
+  systemd:
+    state: started
+    name: postgresql-14
+    enabled: yes

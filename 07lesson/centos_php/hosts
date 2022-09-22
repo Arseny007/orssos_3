@@ -1,0 +1,2 @@
+pg ansible_host=192.168.56.5 ansible_user=vagrant ansible_become=yes
+web ansible_host=192.168.56.4 ansible_user=vagrant ansible_become=yes

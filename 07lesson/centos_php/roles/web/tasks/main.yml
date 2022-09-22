@@ -1,0 +1,76 @@
+---
+- name: Selinux off
+  copy:
+    src: config
+    dest: /etc/selinux/config
+  tags:
+    - selinux
+    - web
+
+- name: reboot
+  ansible.builtin.reboot:
+  tags: web
+
+- name: pgs
+  copy:
+    src: pgdg-redhat-all.repo
+    dest: /etc/yum.repos.d/pgdg-redhat-all.repo
+  tags: web
+
+- name: connect to .rpm postgresql
+  yum:
+    name:
+      - https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+    state: present
+    validate_certs: no
+  tags:
+    - package
+    - web
+
+- name: Install EPEL Repo package from standard repo
+  yum:
+    name: epel-release
+    state: present
+  tags: web
+
+- name: install nginx from repo
+  yum:
+    name: nginx
+    state: latest
+  tags: web
+
+- name: install remi repo
+  yum:
+    name: https://rpms.remirepo.net/enterprise/remi-release-7.rpm
+    validate_certs: no
+    state: present
+  tags: web
+
+- name: install php-fpm from repo
+  yum:
+    name:
+      - php-fpm
+      - php-pgsql
+      - libpq
+    state: latest
+  tags: web
+
+- name: Create config file from files
+  ansible.builtin.copy:
+    src: www.conf
+    dest: /etc/php-fpm.d/www.conf
+  notify: restart php-fpm
+  tags: web
+
+- name: Create config file from files
+  ansible.builtin.copy:
+    src: nginx.conf
+    dest: /etc/nginx/nginx.conf
+  tags: web
+
+- name: Create config file from files
+  ansible.builtin.copy:
+    src: index.php
+    dest: /usr/share/nginx/html/index.php
+  notify: restart nginx
+  tags: web
